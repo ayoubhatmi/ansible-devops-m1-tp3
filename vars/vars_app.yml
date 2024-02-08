@@ -1,0 +1,16 @@
+app_packages:
+  - name: apache2
+  - name: php
+
+app_directory: "/var/www/html"
+app_name: "My Web Application"
+app_movies:
+  - title: "Inception"
+    director: "Christopher Nolan"
+  - title: "The Godfather"
+    director: "Francis Ford Coppola"
+  - title: "The Dark Knight"
+    director: "Christopher Nolan"
+
+app_services: "apache2"
+app_healthcheck_url: "http://192.168.1.72:80"

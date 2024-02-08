@@ -1,0 +1,56 @@
+- name: Web app deployment
+  hosts: servers
+  become: false
+  any_errors_fatal: true
+  vars_files:
+    - "vars/vars_app.yml"
+  tasks:
+    - name: set nameservers
+      become: true
+      ansible.builtin.lineinfile:
+        path: "/etc/resolv.conf"
+        line: "nameserver 8.8.8.8"
+
+    - name: List the contents of the /home/debian directory
+      command: ls /home/debian
+      register: output
+
+    - name: Display the output of the command
+      debug:
+        var: output.stdout_lines
+
+    - name: Install necessary packages
+      ansible.builtin.package:
+        name: "{{ item.name }}"
+        state: present
+      loop: "{{ app_packages }}"
+      become: true
+
+    - name: Copy the template to the application directory
+      ansible.builtin.template:
+        src: "./templates/index.html.j2"
+        dest: "{{ app_directory }}/index.html"
+
+    - name: Copy favicon.ico file
+      ansible.builtin.template:
+        src: "./files/favicon.ico"
+        dest: "{{ app_directory }}/favicon.ico"
+
+    - name: Start Apache2 service
+      ansible.builtin.service:
+        name: "{{ app_services }}"
+        state: started
+      become: true
+    - name: Healthcheck for the application
+      uri:
+        url: "{{ app_healthcheck_url }}"
+        return_content: yes
+        status_code: 200
+        method: GET
+        timeout: 10
+        validate_certs: no
+      retries: 12
+      delay: 5
+      until: result.status == 200
+      register: result
+      when: app_healthcheck_url is defined
